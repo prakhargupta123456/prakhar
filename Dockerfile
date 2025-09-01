@@ -60,6 +60,7 @@ WORKDIR /5g-upf/etc
 COPY --from=vpp-upf-builder /vpp-upf/scripts/upf_conf/upf_profile.json ./
 COPY --from=vpp-upf-builder /vpp-upf/scripts/upf_conf/create_configuration.py ./
 COPY --from=vpp-upf-builder /vpp-upf/scripts/snap/upf_default_conf.sh ./
+COPY vpp-startup.conf startup.conf
 
 # Plugins
 WORKDIR /usr/lib/x86_64-linux-gnu/vpp_plugins/
