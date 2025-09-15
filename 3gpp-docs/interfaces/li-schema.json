@@ -1,0 +1,398 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Lawful Interception Message Schema",
+  "description": "JSON schema for LI messages (LI-X2 and LI-X3)",
+  "definitions": {
+    "li_message": {
+      "type": "object",
+      "properties": {
+        "message_type": {
+          "type": "string",
+          "enum": [
+            "Content of Communications",
+            "Intercept Related Information",
+            "LI Session Establishment",
+            "LI Session Modification",
+            "LI Session Termination",
+            "LI Status Report",
+            "LI Error Report"
+          ]
+        },
+        "li_session_id": {
+          "type": "string",
+          "pattern": "^li-session-[0-9]+$"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "target_identity": {
+          "$ref": "#/definitions/target_identity"
+        },
+        "message_sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "encryption_info": {
+          "$ref": "#/definitions/encryption_info"
+        }
+      },
+      "required": ["message_type", "li_session_id", "timestamp", "target_identity"]
+    },
+    "target_identity": {
+      "type": "object",
+      "properties": {
+        "imsi": {
+          "type": "string",
+          "pattern": "^[0-9]{15}$"
+        },
+        "msisdn": {
+          "type": "string",
+          "pattern": "^\\+[0-9]{1,15}$"
+        },
+        "ip_address": {
+          "type": "string",
+          "format": "ipv4"
+        },
+        "ipv6_address": {
+          "type": "string",
+          "format": "ipv6"
+        },
+        "imei": {
+          "type": "string",
+          "pattern": "^[0-9]{15}$"
+        },
+        "supi": {
+          "type": "string",
+          "pattern": "^imsi-[0-9]{15}$"
+        }
+      }
+    },
+    "encryption_info": {
+      "type": "object",
+      "properties": {
+        "encryption_algorithm": {
+          "type": "string",
+          "enum": ["AES-256-GCM", "AES-128-GCM", "ChaCha20-Poly1305"]
+        },
+        "key_id": {
+          "type": "string"
+        },
+        "initialization_vector": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]+$"
+        },
+        "authentication_tag": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]+$"
+        }
+      },
+      "required": ["encryption_algorithm", "key_id"]
+    },
+    "content_of_communications": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/li_message"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "content": {
+              "$ref": "#/definitions/communication_content"
+            },
+            "direction": {
+              "type": "string",
+              "enum": ["uplink", "downlink", "bidirectional"]
+            },
+            "protocol": {
+              "type": "string",
+              "enum": ["HTTP", "HTTPS", "SIP", "RTP", "SMS", "MMS", "FTP", "SMTP", "IMAP", "POP3", "DNS", "DHCP", "ICMP", "TCP", "UDP"]
+            },
+            "session_info": {
+              "$ref": "#/definitions/session_info"
+            }
+          },
+          "required": ["content", "direction", "protocol"]
+        }
+      ]
+    },
+    "communication_content": {
+      "type": "object",
+      "properties": {
+        "content_type": {
+          "type": "string",
+          "enum": ["text", "binary", "audio", "video", "image", "application"]
+        },
+        "content_encoding": {
+          "type": "string",
+          "enum": ["base64", "hex", "utf-8", "binary"]
+        },
+        "content_data": {
+          "type": "string",
+          "description": "Base64 or hex encoded content"
+        },
+        "content_size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "content_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{64}$",
+          "description": "SHA-256 hash of content"
+        }
+      },
+      "required": ["content_type", "content_encoding", "content_data"]
+    },
+    "session_info": {
+      "type": "object",
+      "properties": {
+        "session_id": {
+          "type": "string"
+        },
+        "pdu_session_type": {
+          "type": "string",
+          "enum": ["IPv4", "IPv6", "IPv4v6", "Ethernet", "Unstructured"]
+        },
+        "dnn": {
+          "type": "string",
+          "description": "Data Network Name"
+        },
+        "sst": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255,
+          "description": "Slice/Service Type"
+        },
+        "sd": {
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{6}$",
+          "description": "Slice Differentiator"
+        },
+        "qfi": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 63,
+          "description": "QoS Flow Identifier"
+        }
+      }
+    },
+    "intercept_related_information": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/li_message"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "event_type": {
+              "type": "string",
+              "enum": [
+                "Session Establishment",
+                "Session Release",
+                "Session Modification",
+                "Location Update",
+                "Service Request",
+                "Authentication",
+                "Registration",
+                "Deregistration",
+                "Handover",
+                "Charging Event",
+                "Error Event"
+              ]
+            },
+            "event_data": {
+              "type": "object",
+              "description": "Event-specific data"
+            },
+            "location_information": {
+              "$ref": "#/definitions/location_information"
+            },
+            "service_information": {
+              "$ref": "#/definitions/service_information"
+            }
+          },
+          "required": ["event_type", "event_data"]
+        }
+      ]
+    },
+    "location_information": {
+      "type": "object",
+      "properties": {
+        "tai": {
+          "type": "string",
+          "pattern": "^[0-9]{6}$",
+          "description": "Tracking Area Identity"
+        },
+        "ecgi": {
+          "type": "string",
+          "pattern": "^[0-9]{15}$",
+          "description": "E-UTRAN Cell Global Identifier"
+        },
+        "ncgi": {
+          "type": "string",
+          "pattern": "^[0-9]{15}$",
+          "description": "NR Cell Global Identifier"
+        },
+        "location_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "location_accuracy": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Location accuracy percentage"
+        },
+        "location_source": {
+          "type": "string",
+          "enum": ["GPS", "Network", "Wifi", "Bluetooth", "Cell", "Unknown"]
+        }
+      }
+    },
+    "service_information": {
+      "type": "object",
+      "properties": {
+        "service_type": {
+          "type": "string",
+          "enum": ["Voice", "Video", "Data", "SMS", "MMS", "IMS", "Emergency", "Location"]
+        },
+        "service_status": {
+          "type": "string",
+          "enum": ["Active", "Inactive", "Suspended", "Terminated", "Error"]
+        },
+        "qos_parameters": {
+          "type": "object",
+          "properties": {
+            "qfi": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 63
+            },
+            "5qi": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 255
+            },
+            "arp": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 15
+            },
+            "gbr": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Guaranteed Bit Rate in kbps"
+            },
+            "mbr": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Maximum Bit Rate in kbps"
+            }
+          }
+        },
+        "charging_information": {
+          "type": "object",
+          "properties": {
+            "charging_id": {
+              "type": "string"
+            },
+            "charging_function_address": {
+              "type": "string",
+              "format": "uri"
+            },
+            "online_charging": {
+              "type": "boolean"
+            },
+            "offline_charging": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "li_status_report": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/li_message"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": ["Active", "Inactive", "Error", "Suspended", "Terminated"]
+            },
+            "status_reason": {
+              "type": "string"
+            },
+            "statistics": {
+              "$ref": "#/definitions/li_statistics"
+            },
+            "error_info": {
+              "$ref": "#/definitions/error_info"
+            }
+          },
+          "required": ["status"]
+        }
+      ]
+    },
+    "li_statistics": {
+      "type": "object",
+      "properties": {
+        "messages_sent": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bytes_sent": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "messages_failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "last_activity": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "uptime": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Uptime in seconds"
+        }
+      }
+    },
+    "error_info": {
+      "type": "object",
+      "properties": {
+        "error_code": {
+          "type": "string",
+          "pattern": "^LI-[0-9]{3}$"
+        },
+        "error_message": {
+          "type": "string"
+        },
+        "error_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "retry_after": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Retry after seconds"
+        },
+        "error_details": {
+          "type": "object",
+          "description": "Additional error details"
+        }
+      },
+      "required": ["error_code", "error_message"]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "li_message": {
+      "$ref": "#/definitions/li_message"
+    }
+  }
+}
