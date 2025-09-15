@@ -1,0 +1,358 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PFCP Message Schema for Lawful Interception",
+  "description": "JSON schema for PFCP messages used in SMF-UPF lawful interception",
+  "definitions": {
+    "pfcp_message": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1,
+          "description": "PFCP version (currently 1)"
+        },
+        "message_type": {
+          "type": "string",
+          "enum": [
+            "Session Establishment Request",
+            "Session Establishment Response",
+            "Session Modification Request",
+            "Session Modification Response",
+            "Session Deletion Request",
+            "Session Deletion Response",
+            "Session Report Request",
+            "Session Report Response"
+          ]
+        },
+        "message_length": {
+          "type": "integer",
+          "minimum": 4
+        },
+        "f_seid": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{16}$",
+          "description": "F-SEID in hexadecimal format"
+        },
+        "pfcp_session_id": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "sequence_number": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "ie_list": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/information_element"
+          }
+        }
+      },
+      "required": ["version", "message_type", "f_seid", "pfcp_session_id", "sequence_number"]
+    },
+    "information_element": {
+      "type": "object",
+      "properties": {
+        "ie_type": {
+          "type": "string",
+          "enum": [
+            "Create PDR",
+            "Update PDR",
+            "Remove PDR",
+            "Create FAR",
+            "Update FAR",
+            "Remove FAR",
+            "Create URR",
+            "Update URR",
+            "Remove URR",
+            "Create QER",
+            "Update QER",
+            "Remove QER",
+            "Node ID",
+            "F-SEID",
+            "PDR ID",
+            "FAR ID",
+            "URR ID",
+            "QER ID",
+            "Precedence",
+            "PDI",
+            "Outer Header Removal",
+            "FAR ID",
+            "Apply Action",
+            "Forwarding Parameters",
+            "Usage Report",
+            "Error Indication Report",
+            "LI Information"
+          ]
+        },
+        "ie_length": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ie_value": {
+          "type": "object"
+        }
+      },
+      "required": ["ie_type"]
+    },
+    "pdr": {
+      "type": "object",
+      "properties": {
+        "pdr_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "precedence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "pdi": {
+          "$ref": "#/definitions/pdi"
+        },
+        "outer_header_removal": {
+          "type": "string",
+          "enum": ["GTP-U/UDP/IPv4", "GTP-U/UDP/IPv6", "UDP/IPv4", "UDP/IPv6", "IPv4", "IPv6"]
+        },
+        "far_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "urr_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "qer_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        }
+      },
+      "required": ["pdr_id", "precedence", "pdi", "far_id"]
+    },
+    "pdi": {
+      "type": "object",
+      "properties": {
+        "source_interface": {
+          "type": "string",
+          "enum": ["access", "core", "sgi-lan", "cp-function", "5g-vn-internal"]
+        },
+        "ue_ip_address": {
+          "type": "string",
+          "format": "ipv4"
+        },
+        "ue_ipv6_address": {
+          "type": "string",
+          "format": "ipv6"
+        },
+        "application_id": {
+          "type": "string",
+          "description": "Application identifier for LI targeting"
+        },
+        "network_instance": {
+          "type": "string",
+          "description": "DNN or network slice identifier"
+        },
+        "source_interface": {
+          "type": "string",
+          "enum": ["access", "core", "sgi-lan", "cp-function", "5g-vn-internal"]
+        }
+      }
+    },
+    "far": {
+      "type": "object",
+      "properties": {
+        "far_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "apply_action": {
+          "type": "string",
+          "enum": ["DROP", "FORW", "BUFF", "NOCP", "DUPL", "IPMA", "IPMD"]
+        },
+        "forwarding_parameters": {
+          "$ref": "#/definitions/forwarding_parameters"
+        }
+      },
+      "required": ["far_id", "apply_action"]
+    },
+    "forwarding_parameters": {
+      "type": "object",
+      "properties": {
+        "destination_interface": {
+          "type": "string",
+          "enum": ["access", "core", "sgi-lan", "cp-function", "5g-vn-internal", "li-x2", "li-x3"]
+        },
+        "network_instance": {
+          "type": "string",
+          "description": "Target network instance for LI"
+        },
+        "outer_header_creation": {
+          "$ref": "#/definitions/outer_header_creation"
+        },
+        "li_forwarding_info": {
+          "$ref": "#/definitions/li_forwarding_info"
+        }
+      }
+    },
+    "outer_header_creation": {
+      "type": "object",
+      "properties": {
+        "outer_header_creation_description": {
+          "type": "string",
+          "enum": ["GTP-U/UDP/IPv4", "GTP-U/UDP/IPv6", "UDP/IPv4", "UDP/IPv6", "IPv4", "IPv6"]
+        },
+        "teid": {
+          "type": "string",
+          "pattern": "^0x[0-9a-fA-F]{8}$"
+        },
+        "ipv4_address": {
+          "type": "string",
+          "format": "ipv4"
+        },
+        "ipv6_address": {
+          "type": "string",
+          "format": "ipv6"
+        },
+        "port_number": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        }
+      }
+    },
+    "li_forwarding_info": {
+      "type": "object",
+      "properties": {
+        "li_session_id": {
+          "type": "string",
+          "pattern": "^li-session-[0-9]+$"
+        },
+        "li_x2_endpoint": {
+          "type": "string",
+          "format": "uri",
+          "description": "LI-X2 delivery function endpoint"
+        },
+        "li_x3_endpoint": {
+          "type": "string",
+          "format": "uri",
+          "description": "LI-X3 delivery function endpoint"
+        },
+        "encryption_key_id": {
+          "type": "string",
+          "description": "Encryption key identifier for LI data"
+        },
+        "interception_scope": {
+          "type": "object",
+          "properties": {
+            "content_of_communications": {
+              "type": "boolean"
+            },
+            "intercept_related_information": {
+              "type": "boolean"
+            },
+            "location_information": {
+              "type": "boolean"
+            }
+          }
+        }
+      },
+      "required": ["li_session_id"]
+    },
+    "urr": {
+      "type": "object",
+      "properties": {
+        "urr_id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "measurement_method": {
+          "type": "string",
+          "enum": ["DURAT", "VOLUME", "EVENT"]
+        },
+        "reporting_triggers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["IMMER", "DROTH", "START", "STOPT", "PERIO", "EVETR", "VOLTH", "VOLQU", "TIMTH", "QUHTI", "ENDTH", "PROTH", "VOLUM", "ENVCL", "MONIT", "TERMR", "LIUSA", "TIMQU", "VOLQU"]
+          }
+        },
+        "measurement_period": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295,
+          "description": "Measurement period in seconds"
+        },
+        "volume_threshold": {
+          "$ref": "#/definitions/volume_threshold"
+        },
+        "time_threshold": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295,
+          "description": "Time threshold in seconds"
+        },
+        "li_usage_reporting": {
+          "$ref": "#/definitions/li_usage_reporting"
+        }
+      },
+      "required": ["urr_id", "measurement_method"]
+    },
+    "volume_threshold": {
+      "type": "object",
+      "properties": {
+        "total_volume": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "uplink_volume": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "downlink_volume": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "li_usage_reporting": {
+      "type": "object",
+      "properties": {
+        "li_session_id": {
+          "type": "string",
+          "pattern": "^li-session-[0-9]+$"
+        },
+        "reporting_interval": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600,
+          "description": "Reporting interval in seconds"
+        },
+        "include_packet_count": {
+          "type": "boolean"
+        },
+        "include_byte_count": {
+          "type": "boolean"
+        },
+        "include_timestamp": {
+          "type": "boolean"
+        }
+      },
+      "required": ["li_session_id"]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "pfcp_message": {
+      "$ref": "#/definitions/pfcp_message"
+    }
+  }
+}

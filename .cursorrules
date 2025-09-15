@@ -1,0 +1,146 @@
+# Cursor AI Rules for 3GPP Lawful Interception Development
+
+## Project Context
+This workspace contains 3GPP documentation and code generation templates for implementing lawful interception interfaces between SMF (Session Management Function) and UPF (User Plane Function) in 5G networks.
+
+## Key Directories
+- `3gpp-docs/specifications/` - 3GPP specification documents (TS 29.244, TS 33.126)
+- `3gpp-docs/interfaces/` - JSON schemas for PFCP and LI messages
+- `3gpp-docs/code-templates/` - Python templates for code generation
+- `3gpp-docs/cursor-rules/` - Cursor AI configuration rules
+- `3gpp-docs/examples/` - Implementation examples and guides
+
+## Code Generation Guidelines
+
+### When generating PFCP messages:
+1. **Always use the PFCP message template** from `code-templates/pfcp-message-template.py`
+2. **Include proper error handling** for all PFCP operations
+3. **Validate input parameters** before creating messages
+4. **Use appropriate message types**: Session Establishment, Modification, Deletion
+5. **Include LI-specific IEs**: PDR, FAR, URR with LI forwarding information
+6. **Set proper precedence values** for LI PDRs (typically 50-100)
+7. **Include encryption information** for LI data forwarding
+
+### When generating LI messages:
+1. **Use the LI message template** from `code-templates/li-message-template.py`
+2. **Distinguish between LI-X2 (content) and LI-X3 (IRI) messages**
+3. **Include proper target identity information** (IMSI, MSISDN, IP address)
+4. **Add encryption information** for all LI messages
+5. **Include timestamps** in ISO 8601 format
+6. **Validate message sequence numbers**
+7. **Handle different content types** (text, binary, audio, video)
+
+### When implementing session management:
+1. **Use the SMF-UPF LI handler** from `code-templates/smf-upf-li-handler.py`
+2. **Implement proper session lifecycle**: Create, Modify, Terminate
+3. **Handle session state transitions** correctly
+4. **Include session validation** before operations
+5. **Log all session operations** for audit purposes
+6. **Handle concurrent session modifications**
+
+## Security Requirements
+- **Encrypt all LI data** using AES-256-GCM or equivalent
+- **Implement proper key management** for encryption keys
+- **Use secure communication channels** (TLS 1.3)
+- **Validate certificates** for all LI endpoints
+- **Implement access control** for LI operations
+- **Audit all LI activities** for compliance
+
+## Error Handling
+- **Use standard PFCP error codes** (100-110)
+- **Use standard LI error codes** (LI-001 to LI-008)
+- **Include retry mechanisms** for transient failures
+- **Log errors with appropriate levels** (ERROR, WARNING, INFO)
+- **Provide meaningful error messages** to users
+- **Handle network timeouts** gracefully
+
+## Validation Rules
+- **Validate IMSI format**: 15 digits
+- **Validate MSISDN format**: + followed by 1-15 digits
+- **Validate IP addresses**: IPv4 or IPv6 format
+- **Validate LI session IDs**: Must match pattern `li-session-[0-9]+`
+- **Validate endpoint URLs**: Must be valid HTTP/HTTPS URLs
+
+## Code Quality Standards
+- **Follow PEP 8** style guidelines
+- **Use meaningful variable names**
+- **Keep functions focused** and small
+- **Implement proper error handling**
+- **Document all public functions** with docstrings
+- **Include type hints** for all parameters
+- **Add inline comments** for complex logic
+
+## Common Patterns to Use
+```python
+# PFCP Session Establishment for LI
+builder = PFCPMessageBuilder(f_seid, session_id)
+message = builder.create_li_session_establishment(
+    li_session_id=li_session_id,
+    target_imsi=target_imsi,
+    li_x2_endpoint=li_x2_endpoint,
+    li_x3_endpoint=li_x3_endpoint
+)
+
+# LI Content Message Creation
+builder = LIMessageBuilder(li_session_id)
+message = builder.create_content_message(
+    target_identity=target_identity,
+    content_data=content_data,
+    content_type=ContentType.TEXT,
+    protocol=Protocol.HTTP,
+    direction="uplink"
+)
+
+# LI IRI Message Creation
+builder = LIMessageBuilder(li_session_id)
+message = builder.create_iri_message(
+    target_identity=target_identity,
+    event_type=EventType.SESSION_ESTABLISHMENT,
+    event_data=event_data
+)
+```
+
+## Anti-patterns to Avoid
+- **Don't hardcode** LI endpoints or keys
+- **Don't skip input validation**
+- **Don't ignore error conditions**
+- **Don't use weak encryption** algorithms
+- **Don't log sensitive data** in plain text
+
+## Testing Requirements
+- **Test all message creation functions**
+- **Validate error handling paths**
+- **Test encryption/decryption functions**
+- **Verify input validation**
+- **Test SMF-UPF communication**
+- **Verify LI endpoint connectivity**
+- **Test session lifecycle operations**
+
+## Compliance Requirements
+- **Follow TS 29.244** for PFCP implementation
+- **Follow TS 33.126** for LI architecture
+- **Implement required LI interfaces** (LI-X1, LI-X2, LI-X3)
+- **Use standard message formats** and encodings
+- **Implement data retention** policies
+- **Provide audit trails** for all operations
+- **Support data deletion** after retention period
+
+## Performance Considerations
+- **Use generators** for large data processing
+- **Implement proper cleanup** for resources
+- **Limit message queue sizes** to prevent memory issues
+- **Use connection pooling** for HTTP clients
+- **Implement message batching** for multiple LI messages
+- **Use compression** for large content messages
+- **Implement retry logic** with exponential backoff
+
+## Integration Guidelines
+- **Use standard SMF APIs** for session management
+- **Implement proper event handling** for session changes
+- **Support session context** updates
+- **Handle SMF failures** gracefully
+- **Use PFCP protocol** for UPF communication
+- **Implement proper message handling**
+- **Support UPF capabilities** negotiation
+- **Use standard LI message formats**
+- **Implement proper authentication** for LI endpoints
